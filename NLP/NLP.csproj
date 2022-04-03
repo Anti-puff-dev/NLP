@@ -5,6 +5,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="bin\Debug\netcoreapp2.1\NLP.deps.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="bin\Debug\netcoreapp2.1\MySQL.dll" />
+    <None Include="bin\Debug\netcoreapp2.1\MySQL.pdb" />
+    <None Include="bin\Debug\netcoreapp2.1\NLP.dll" />
+    <None Include="bin\Debug\netcoreapp2.1\NLP.pdb" />
+    <None Include="bin\Debug\netcoreapp2.1\StringUtils.dll" />
+    <None Include="bin\Debug\netcoreapp2.1\StringUtils.pdb" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MySql.Data" Version="8.0.28" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
