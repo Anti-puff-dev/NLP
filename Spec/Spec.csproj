@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="bin\Debug\netcoreapp2.1\appsettings.json" />
+    <Content Include="bin\Debug\netcoreapp2.1\Spec.deps.json" />
+    <Content Include="bin\Debug\netcoreapp2.1\Spec.runtimeconfig.dev.json" />
+    <Content Include="bin\Debug\netcoreapp2.1\Spec.runtimeconfig.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="bin\Debug\netcoreapp2.1\MySQL.dll" />
+    <None Include="bin\Debug\netcoreapp2.1\MySQL.pdb" />
+    <None Include="bin\Debug\netcoreapp2.1\NLP.dll" />
+    <None Include="bin\Debug\netcoreapp2.1\NLP.pdb" />
+    <None Include="bin\Debug\netcoreapp2.1\Spec.dll" />
+    <None Include="bin\Debug\netcoreapp2.1\Spec.pdb" />
+    <None Include="bin\Debug\netcoreapp2.1\StringUtils.dll" />
+    <None Include="bin\Debug\netcoreapp2.1\StringUtils.pdb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NLP\NLP.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="MySQL">
+      <HintPath>..\..\MySQL\MySQL\bin\Release\netcoreapp2.1\MySQL.dll</HintPath>
+    </Reference>
+    <Reference Include="StringUtils">
+      <HintPath>..\..\MySQL\MySQL\bin\Release\netcoreapp2.1\StringUtils.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
