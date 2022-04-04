@@ -15,12 +15,26 @@ namespace NLP
             return list.Any(x => { i++; return condition(x); }) ? i : -1;
         }
 
-        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        public static IEnumerable<TSource> DistinctBy<TSource>(this IEnumerable<TSource> source, params Func<TSource, object>[] keySelectors)
         {
-            HashSet<TKey> seenKeys = new HashSet<TKey>();
-            foreach (TSource element in source)
+            // initialize the table
+            var seenKeysTable = keySelectors.ToDictionary(x => x, x => new HashSet<object>());
+
+            // loop through each element in source
+            foreach (var element in source)
             {
-                if (seenKeys.Add(keySelector(element)))
+                // initialize the flag to true
+                var flag = true;
+
+                // loop through each keySelector a
+                foreach (var (keySelector, hashSet) in seenKeysTable)
+                {
+                    // if all conditions are true
+                    flag = flag && hashSet.Add(keySelector(element));
+                }
+
+                // if no duplicate key was added to table, then yield the list element
+                if (flag)
                 {
                     yield return element;
                 }
@@ -45,7 +59,7 @@ namespace NLP
             get => MySQL.DbConnection.ConnString;
             set { MySQL.DbConnection.ConnString = value; }
         }
-        public static Models.Token[] RuntimeTokens;
+        public static Models.Token[] RuntimeTokens = new Models.Token[0];
         public static double TrainingRate = 10;
         public static double TrainingRateDecay = 1.1;
 
@@ -56,14 +70,19 @@ namespace NLP
             Models.Token[] category_tokens = null;
             Models.Token[] tokens = Relevances(Weights(Tokenize.Apply(text)));
 
-
-            if (TrainType == Train.Database)
+            foreach (Models.Token token in tokens)
             {
-                category_tokens = MySQL.Json.Select.Fill($"SELECT * FROM {DbTable} WHERE category=?word AND experiment=?experiment", new string[] { word, Experiment }).Multiple<Models.Token>();
+                token.category = word;
+            }
+
+
+           if (TrainType == Train.Database)
+            {
+                category_tokens = MySQL.Json.Select.Fill($"SELECT * FROM {DbTable} WHERE category=?word AND experiment=?experiment ORDER BY word ASC", new string[] { word, Experiment }).Multiple<Models.Token>();
 
             } else if(TrainType == Train.Runtime)
             {
-                category_tokens = RuntimeTokens;
+                category_tokens = RuntimeTokens.Where(c => c.category == word).OrderBy(i => i.word).ToArray();
             }
 
             bool isfirst = false;
@@ -100,7 +119,10 @@ namespace NLP
                         List<string> parms = new List<string>();
 
                         int c = 0;
-                        foreach (Models.Token token in intersect_tokens.Concat(different_tokens))
+
+                        //RuntimeTokens = RuntimeTokens.Concat(tokens).GroupBy(x => new { x.category, x.word }).Select(x => x.First()).ToArray();
+
+                        foreach (Models.Token token in RuntimeTokens)
                         {
                             query += $"INSERT INTO {DbTable} (experiment, word, category, {DbTable}.count, weight, relevance) VALUES (?experiment_i{c}, ?word_i{c}, ?category_i{c}, ?count_i{c}, ?weight_i{c}, ?relevance_i{c}) ON DUPLICATE KEY UPDATE {DbTable}.count=?count_u{c}, weight=?weight_u{c}, relevance=?relevance_u{c};";
                             parms.Add(Experiment);
@@ -116,11 +138,10 @@ namespace NLP
                         }
 
                         Data.Query(query, parms.ToArray());
-                        RuntimeTokens = intersect_tokens.Concat(different_tokens).DistinctBy(t => t.word).ToArray();
                     }
                     else if (TrainType == Train.Runtime)
                     {
-                        RuntimeTokens = intersect_tokens.Concat(different_tokens).DistinctBy(t => t.word).ToArray();
+                        RuntimeTokens = RuntimeTokens.Concat(tokens).GroupBy(x => new { x.category, x.word } ).Select(x => x.First()).ToArray();
                     }
                 }
                 else
@@ -132,7 +153,7 @@ namespace NLP
                 isfirst = true;
             }
 
-            Console.WriteLine("First: " + isfirst);
+            //Console.WriteLine("First: " + isfirst);
 
 
             if (isfirst)
@@ -159,23 +180,23 @@ namespace NLP
                     }
 
                     Data.Query(query, parms.ToArray());
-                    RuntimeTokens = tokens;
+                    RuntimeTokens = RuntimeTokens.Concat(tokens).ToArray();
                 }
                 else if (TrainType == Train.Runtime)
                 {
-                    RuntimeTokens = tokens;
+                    RuntimeTokens = RuntimeTokens.Concat(tokens).ToArray();
                 }
             }
 
 
 
-            #region Debug
+            /*#region Debug
             Console.WriteLine(">>> ");
             foreach (Models.Token token in RuntimeTokens.OrderByDescending(o => o.weight))
-            {
-                Console.WriteLine($"word: {token.word} \t count: {token.count} \t weight: {token.weight} \t relevance: {token.relevance}");
+            {     
+                Console.WriteLine($"word: {token.word} \t category: { token.category} \t count: {token.count} \t weight: {token.weight} \t relevance: {token.relevance}");
             }
-            #endregion Debug
+            #endregion Debug*/
         }
 
 
@@ -265,7 +286,7 @@ namespace NLP
 
 
         #region Predict
-        public static Models.Category[] PredictCategory(string text, int results = 10)
+        public static Models.Category[] Predict(string text, int results = 10)
         {
             Models.Token[] tokens = Relevances(Weights(Tokenize.Apply(text)));
             List<Models.Token[]> list = new List<Models.Token[]>();
@@ -278,42 +299,46 @@ namespace NLP
                 foreach (Models.Token token in _tokens)
                 {
                     Models.Token[] word_tokens = MySQL.Json.Select.Fill($"SELECT * FROM {DbTable} WHERE experiment=?experiment AND word=?word ORDER BY weight DESC LIMIT 30", new string[] { Experiment, token.word }).Multiple<Models.Token>();
+                    //Console.WriteLine(word_tokens.Length); 
                     if (word_tokens != null && word_tokens.Length > 0) list.Add(word_tokens);
                 }
-
-
-                int c = 1;
-                foreach (Models.Token[] token_list in list)
-                {
-                    Console.WriteLine($"LIST {c++} ------------------------------------------");
-
-                    foreach (Models.Token token in token_list)
-                    {
-                        Models.Category cat = list_categories.Find(v => v.name == token.category);
-                        if(cat != null)
-                        {
-                            cat.weigths_avg = (cat.weigths_avg + token.weight) / 2;
-                            cat.weigths_sum += token.weight;
-                            cat.relevance_avg = (cat.relevance_avg + token.relevance) / 2;
-                            cat.relevance_sum += token.relevance;
-                            cat.count++;
-                        } else
-                        {
-                            list_categories.Add(new Models.Category() { name = token.category, count = 1, weigths_sum = token.weight, weigths_avg = token.weight, relevance_sum = token.relevance, relevance_avg = token.relevance });
-                        }
-
-                        Console.WriteLine($"category: {token.category} \tword: {token.word} \t count: {token.count} \t weight: {token.weight} \t relevance: {token.relevance} \n");
-                    }
-                }
-
-                list_categories = list_categories.OrderByDescending(item => item.count).ThenByDescending(item => item.relevance_avg).Take(results).ToList();
-
-
             }
             else if (TrainType == Train.Runtime)
             {
-
+                foreach (Models.Token token in _tokens)
+                {
+                    Models.Token[] word_tokens = RuntimeTokens.Where(i => i.word == token.word).OrderByDescending(i => i.weight).Take(30).ToArray();
+                    //Console.WriteLine(word_tokens.Length);
+                    if (word_tokens != null && word_tokens.Length > 0) list.Add(word_tokens);
+                }
             }
+
+            int c = 1;
+            foreach (Models.Token[] token_list in list)
+            {
+                Console.WriteLine($"LIST {c++} ------------------------------------------");
+
+                foreach (Models.Token token in token_list)
+                {
+                    Models.Category cat = list_categories.Find(v => v.name == token.category);
+                    if (cat != null)
+                    {
+                        cat.weigths_avg = (cat.weigths_avg + token.weight) / 2;
+                        cat.weigths_sum += token.weight;
+                        cat.relevance_avg = (cat.relevance_avg + token.relevance) / 2;
+                        cat.relevance_sum += token.relevance;
+                        cat.count++;
+                    }
+                    else
+                    {
+                        list_categories.Add(new Models.Category() { name = token.category, count = 1, weigths_sum = token.weight, weigths_avg = token.weight, relevance_sum = token.relevance, relevance_avg = token.relevance });
+                    }
+
+                    Console.WriteLine($"category: {token.category} \tword: {token.word} \t count: {token.count} \t weight: {token.weight} \t relevance: {token.relevance} \n");
+                }
+            }
+
+            list_categories = list_categories.OrderByDescending(item => item.count).ThenByDescending(item => item.relevance_avg).Take(results).ToList();
 
 
             #region Debug
@@ -328,7 +353,7 @@ namespace NLP
         }
 
 
-        public static Models.Category[] PredictCategory(string text, bool ignore = true, int results = 10)
+        public static Models.Category[] Predict(string text, bool ignore = true, int results = 10)
         {
             if (ignore)
             {
@@ -339,14 +364,14 @@ namespace NLP
                 text = Sanitize.Apply(text);
             }
 
-            return PredictCategory(text, results);
+            return Predict(text, results);
         }
 
 
-        public static Models.Category[] PredictCategory(string text, string[] ignore, int results = 10)
+        public static Models.Category[] Predict(string text, string[] ignore, int results = 10)
         {
             text = Sanitize.CustomApply(text, ignore);
-            return PredictCategory(text, results);
+            return Predict(text, results);
         }
         #endregion Predict
 

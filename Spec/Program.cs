@@ -10,6 +10,24 @@ namespace Spec
     {
         static void Main(string[] args)
         {
+            //RunClassify();
+            RunQnA();
+            Console.ReadKey();
+        }
+
+
+        static void RunClassify()
+        {
+            var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json");
+            var configuration = builder.Build();
+
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+            NLP.Classify.Experiment = "Test1";
+            NLP.Classify.TrainType = NLP.Train.Runtime;
+            NLP.Classify.DbConnection = configuration["DefaultConnectionString"];
+            NLP.Classify.ClearDb();
+
             string[] list = new string[] {
                 "Abaco Abobora Alopécia Tarturfo Mágico Malabarista Genótipo Abaco Abobora",
                 "Metro Abobora Coiso Tesoura Mágico Beneficio Metro Abobora Janela Estrelar",
@@ -32,35 +50,71 @@ namespace Spec
             };
 
 
+
+            //NLP.Classify.TrainCategory(list[0], "test1", true);
+            //NLP.Classify.TrainCategory(list[1], "test1", true);
+            //NLP.Classify.TrainCategory(list[2], "test1", true);
+            //Console.ReadKey();
+
+            NLP.Classify.TrainCategoryGroup(list, "test1", true);
+            NLP.Classify.TrainCategoryGroup(list1, "test2", true);
+
+            Console.WriteLine("-------------------------------------------------------------------------");
+
+
+            NLP.Models.Category[] categories = NLP.Classify.Predict(tests[0], true);
+            foreach (NLP.Models.Category category in categories)
+            {
+                Console.WriteLine($"category: {category.name} \t count: {category.count} \t weight_sum: {category.weigths_sum} \t weight_avg: {category.weigths_avg}  \t relevance_sum: {category.relevance_sum} \t relevance_avg: {category.relevance_avg}");
+            }
+        }
+
+
+
+
+        static void RunQnA()
+        {
             var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json");
             var configuration = builder.Build();
 
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
-            NLP.Classify.Experiment = "Test1";
-            NLP.Classify.TrainType = NLP.Train.Database;
-            NLP.Classify.DbConnection = configuration["DefaultConnectionString"];
-            NLP.Classify.ClearDb();
+            NLP.QnA.Experiment = "Test1";
+            NLP.QnA.DbConnection = configuration["DefaultConnectionString"];
+            NLP.QnA.ClearDb();
 
 
-            /*
-            NLP.Classify.TrainCategory(list[0], "test1", true);
-            NLP.Classify.TrainCategory(list[1], "test1", true);
-            NLP.Classify.TrainCategory(list[2], "test1", true);
-            */
-            Console.ReadKey();
 
-            NLP.Classify.TrainCategoryGroup(list, "test1", true);
-            NLP.Classify.TrainCategoryGroup(list1, "test2", true);
+            string[] list = new string[] {
+                "qual o seu nome?",
+                "qual seu nome",
+                "como você se chama?",
+                "como vc se chama?"
+            };
 
-            NLP.Models.Category[] categories = NLP.Classify.PredictCategory(tests[2], true);
-            foreach (NLP.Models.Category category in categories)
-            {
-                Console.WriteLine($"category: {category.name} \t count: {category.count} \t weight_sum: {category.weigths_sum} \t weight_avg: {category.weigths_avg}  \t relevance_sum: {category.relevance_sum} \t relevance_avg: {category.relevance_avg}");
-            }
+            string[] list1 = new string[] {
+                "qual a melhor maneira de voar?",
+                "como eu posso voar?",
+                "como posso fazer para voar?"
+            };
 
 
-           Console.ReadKey();
+            string[] tests = new string[] {
+                "qual seu nome?",
+                "diga seu nome",
+                "quero voar",
+                "como faço pra voar",
+            };
+
+
+
+            NLP.QnA.Train(list, "Meu nome é Anti-puff");
+            NLP.QnA.Train(list1, "Use um avião");
+
+            Console.WriteLine($">>> {NLP.QnA.Predict(tests[0])}");
+            Console.WriteLine($">>> {NLP.QnA.Predict(tests[1])}");
+            Console.WriteLine($">>> {NLP.QnA.Predict(tests[2])}");
+            Console.WriteLine($">>> {NLP.QnA.Predict(tests[3])}");
         }
     }
 }
