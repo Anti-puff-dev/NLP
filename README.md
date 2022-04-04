@@ -2,8 +2,8 @@
 ### Simplification Methods with Database MySQL Query-Object Class (https://github.com/Anti-puff-dev/MySQL)
 
 # Important Dlls Imports  
-MySQL.dll  (https://github.com/Anti-puff-dev/MySQL)
-StringUtils.dll  (https://github.com/Anti-puff-dev/StringUtils)
+MySQL.dll  (https://github.com/Anti-puff-dev/MySQL)  
+StringUtils.dll  (https://github.com/Anti-puff-dev/StringUtils)  
 
 # Nuget Packs  
 MySQL.Data 8.0.28  
