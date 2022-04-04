@@ -21,6 +21,44 @@ Create in bin appsettings.json
 }
 ```
 
+# Create Table for text classification
+```
+CREATE TABLE `nlp_dataset` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `experiment` varchar(50) DEFAULT NULL,
+  `word` varchar(50) NOT NULL,
+  `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `count` int(11) DEFAULT NULL,
+  `weight` double(15,10) DEFAULT NULL,
+  `relevance` double(15,10) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique` (`experiment`,`word`,`category`)
+) ENGINE=InnoDB AUTO_INCREMENT=655 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+```
+
+# Create Tables for QnA
+```
+CREATE TABLE `nlp_answers` (
+  `answer_id` int(11) NOT NULL AUTO_INCREMENT,
+  `experiment` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `phrase` text CHARACTER SET utf8 COLLATE utf8_general_ci,
+  PRIMARY KEY (`answer_id`) USING BTREE,
+  FULLTEXT KEY `fulltext` (`phrase`)
+) ENGINE=MyISAM AUTO_INCREMENT=15 DEFAULT CHARSET=latin1
+
+
+CREATE TABLE `nlp_questions` (
+  `question_id` int(11) NOT NULL AUTO_INCREMENT,
+  `experiment` varchar(50) DEFAULT NULL,
+  `answer_id` int(11) DEFAULT NULL,
+  `phrase` text CHARACTER SET utf8 COLLATE utf8_general_ci,
+  PRIMARY KEY (`question_id`) USING BTREE,
+  UNIQUE KEY `unique` (`question_id`,`answer_id`) USING BTREE,
+  FULLTEXT KEY `fulltext` (`phrase`)
+) ENGINE=MyISAM AUTO_INCREMENT=51 DEFAULT CHARSET=latin1
+```
+
+
 
 # Run Spec Project to Tests
 
