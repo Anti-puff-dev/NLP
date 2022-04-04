@@ -9,7 +9,7 @@ namespace NLP
         #region Text
         public static Models.Token[] Apply(string text)
         {
-            string[] list = text.Split(new char[] { ' ', '\t' });
+            string[] list = text.Split(new char[] { ' ', '\t' });//.ToList().Distinct().ToArray();
             var result = list.GroupBy(k => k, StringComparer.InvariantCultureIgnoreCase);
 
             List<Models.Token> tokens = new List<Models.Token>();
@@ -17,6 +17,14 @@ namespace NLP
             {
                 tokens.Add(new Models.Token() { word = value.Key, count = value.Count() });
             }
+
+            /*List<Models.Token> tokens = new List<Models.Token>();
+            foreach (string value in list)
+            {
+                tokens.Add(new Models.Token() { word = value, count = list.Count(t => t == value) });
+            }*/
+
+
             return tokens.Distinct().ToArray();
         }
 

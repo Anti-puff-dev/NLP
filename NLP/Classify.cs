@@ -63,12 +63,14 @@ namespace NLP
         public static double TrainingRate = 10;
         public static double TrainingRateDecay = 1.1;
 
+
         #region Train
         #region Train.Category
         public static void TrainCategory(string text, string word)
         {
             Models.Token[] category_tokens = null;
-            Models.Token[] tokens = Relevances(Weights(Tokenize.Apply(text)));
+            Models.Token[] tokensArr = Tokenize.Apply(text);
+            Models.Token[] tokens = Relevances(Weights(tokensArr));
 
             foreach (Models.Token token in tokens)
             {
@@ -380,7 +382,7 @@ namespace NLP
         #region Functions
         public static Models.Token[] Weights(Models.Token[] tokens)
         {
-            int maxCount = 7; // tokens.OrderByDescending(i => i.count).First().count;
+            int maxCount = tokens.OrderByDescending(i => i.count).First().count;
             //maxCount = maxCount < 7 ? 7 : maxCount;
 
 

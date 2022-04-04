@@ -10,8 +10,8 @@ namespace Spec
     {
         static void Main(string[] args)
         {
-            //RunClassify();
-            RunQnA();
+            RunClassify(); //Text Categorization
+            //RunQnA(); //Question-Answer 
             Console.ReadKey();
         }
 
@@ -30,7 +30,7 @@ namespace Spec
 
             string[] list = new string[] {
                 "Abaco Abobora Alopécia Tarturfo Mágico Malabarista Genótipo Abaco Abobora",
-                "Metro Abobora Coiso Tesoura Mágico Beneficio Metro Abobora Janela Estrelar",
+                "Abobora Coiso Tesoura Mágico Metro Beneficio Metro Abobora Janela Estrelar",
                 "Casa Metro Abobora Dinamite Determinante Alecrim Metrica",
             };
 
