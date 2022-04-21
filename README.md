@@ -11,8 +11,8 @@ Newtonsoft.Json 13.0.1
 
 # NLP Review 2 Functions  
 Text Classification / Categorization -  Database Only (MySQL/MariaDB) / Runtime deprecated  
-Soundex Mode are available now
-Subcategories support added
+Soundex Mode are available now  
+Subcategories support added  
  
 QnA - Answer the Questions  -  Database (MySQL/MariaDB)  
 
