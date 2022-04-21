@@ -29,7 +29,7 @@ namespace Spec
             NLP.Classify.Experiment = "Test1";
             NLP.Classify.DbConnection = configuration["DefaultConnectionString"];
             //NLP.Classify.ClearDb();
-            //NLP.Classify.Instance(1, 4, true);
+            NLP.Classify.Instance(1, 4, true);
 
             string[] list = new string[] {
                 "Abaco Abobora Alopécia Tarturfo Mágico Malabarista Genótipo Abaco Abobora",
@@ -65,7 +65,7 @@ namespace Spec
             Console.WriteLine("-------------------------------------------------------------------------");
 
 
-            NLP.Models.Category[] categories = NLP.Classify.Predict(tests[1], true);
+            NLP.Models.Category[] categories = NLP.Classify.Predict(tests[4], true);
             foreach (NLP.Models.Category category in categories)
             {
                 Console.WriteLine($"category: {category.name} \t count: {category.count} \t weight_sum: {category.weigths_sum} \t weight_avg: {category.weigths_avg}  \t relevance_sum: {category.relevance_sum} \t relevance_avg: {category.relevance_avg}");

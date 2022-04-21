@@ -135,7 +135,7 @@ namespace NLP
 
                     int c = 0;
 
-                    foreach (Models.Token token in tokens)
+                    foreach (Models.Token token in intersect_tokens.Concat(different_tokens))
                     {
                         query += $"INSERT INTO {DbTable} (experiment_id, word, category_id, {DbTable}.count, weight, relevance) VALUES (?experiment_i{c}, ?word_i{c}, ?category_i{c}, ?count_i{c}, ?weight_i{c}, ?relevance_i{c}) ON DUPLICATE KEY UPDATE {DbTable}.count=?count_u{c}, weight=?weight_u{c}, relevance=?relevance_u{c};";
                         parms.Add(ExperimentId);
