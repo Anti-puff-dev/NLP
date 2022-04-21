@@ -9,9 +9,10 @@ StringUtils.dll  (https://github.com/Anti-puff-dev/StringUtils)
 MySQL.Data 8.0.28  
 Newtonsoft.Json 13.0.1  
 
-# NLP version 1 Functions  
+# NLP Review 2 Functions  
 Text Classification / Categorization -  Database Only (MySQL/MariaDB) / Runtime deprecated  
 Soundex Mode are available now
+Subcategories support added
  
 QnA - Answer the Questions  -  Database (MySQL/MariaDB)  
 
@@ -85,57 +86,64 @@ CREATE TABLE `nlp_questions` (
 ### Text Classify
 ```
 static void RunClassify()
-{
-    var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json");
-    var configuration = builder.Build();
+        {
+            var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json");
+            var configuration = builder.Build();
 
-    System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
-   NLP.Classify.Experiment = "Test1";
-   NLP.Classify.DbConnection = configuration["DefaultConnectionString"];
-   NLP.Classify.ClearDb();
-   NLP.Classify.Instance(1, 4, true);  //wordpooling, maxlength, use soundex
+            NLP.Classify.Experiment = "Test1";
+            NLP.Classify.DbConnection = configuration["DefaultConnectionString"];
+            NLP.Classify.ClearDb();
+            NLP.Classify.Instance(1, 4, true);
 
-  string[] list = new string[] {
-      "Abaco Abobora Alopécia Tarturfo Mágico Malabarista Genótipo Abaco Abobora",
-      "Metro Abobora Coiso Tesoura Mágico Beneficio Metro Abobora Janela Estrelar",
-      "Casa Metro Abobora Dinamite Determinante Alecrim Metrica",
-  };
+            string[] list = new string[] {
+                "Abaco Abobora Alopécia Tarturfo Mágico Malabarista Genótipo Abaco Abobora",
+                "Abobora Coiso Tesoura Mágico Metro Beneficio Metro Abobora Janela Estrelar",
+                "Casa Metro Abobora Dinamite Determinante Alecrim Metrica",
+            };
 
-  string[] list1 = new string[] {
-      "Abaco Amora Bronco Setembro Janela Betoneira Joelho Maça Bronco",
-      "Amarelo Jardineira Bronco Cabeça Peça Ovo Orelha Telhado Fone",
-      "Ardosia Branco Azul Gorjeta Amora Gelado Quente Amora Janela",
-  };
-
-
-  string[] tests = new string[] {
-      "Pedra Janela Cabana Peça Abraço Verde Azul Amarelo Feijão",
-      "Geladeira Amora Caçamba Pedregulho Veneza Jardim Acustico",
-      "Viola Casa Alegre Perto Longe Inato Zebra Sapo Telhado",
-      "Badejo Abobora Leitão Pedra Ovo Magico Geraldo Casa",
-      "Brometo Jato Metro Trágico Abaco Estrelar Navio Queijo"
-  };
+            string[] list1 = new string[] {
+                "Abaco Amora Bronco Setembro Janela Betoneira Joelho Maça Bronco",
+                "Amarelo Jardineira Bronco Cabeça Peça Ovo Orelha Telhado Fone",
+                "Ardosia Branco Azul Gorjeta Amora Gelado Quente Amora Janela",
+            };
 
 
-
-  //NLP.Classify.TrainCategory(list[0], "test1", true);
-  //NLP.Classify.TrainCategory(list[1], "test1", true);
-  //NLP.Classify.TrainCategory(list[2], "test1", true);
-  //Console.ReadKey();
-
-  NLP.Classify.TrainCategoryGroup(list, "test1", true);
-  NLP.Classify.TrainCategoryGroup(list1, "test2", true);
-
-  Console.WriteLine("-------------------------------------------------------------------------");
+            string[] tests = new string[] {
+                "Pedra Janela Cabana Peça Abraço Verde Azul Amarelo Feijão",
+                "Geladeira Amora Caçamba Pedregulho Veneza Jardim Acustico",
+                "Viola Casa Alegre Perto Longe Inato Zebra Sapo Telhado",
+                "Badejo Abobora Leitão Pedra Ovo Magico Geraldo Casa",
+                "Brometo Jato Metro Trágico Abaco Estrelar Navio Queijo"
+            };
 
 
-  NLP.Models.Category[] categories = NLP.Classify.Predict(tests[0], true);
-  foreach (NLP.Models.Category category in categories)
-  {
-      Console.WriteLine($"category: {category.name} \t count: {category.count} \t weight_sum: {category.weigths_sum} \t weight_avg: {category.weigths_avg}  \t relevance_sum: {category.relevance_sum} \t relevance_avg: {category.relevance_avg}");
-  } 
-}
+
+            //NLP.Classify.TrainCategory(list[0], "test1", true);
+            //NLP.Classify.TrainCategory(list[1], "test1", true);
+            //NLP.Classify.TrainCategory(list[2], "test1", true);
+            //Console.ReadKey();
+
+            NLP.Classify.TrainCategoryGroup(list, new string[] { "categoria1", "subcategoria1-1" }, true);
+            NLP.Classify.TrainCategoryGroup(list1, new string[] { "categoria2", "subcategoria2-1" }, true);
+
+            Console.WriteLine("-------------------------------------------------------------------------");
+
+
+            NLP.Models.Category[] categories = NLP.Classify.Predict(tests[4], true, 2);
+            foreach (NLP.Models.Category category in categories)
+            {
+                Console.WriteLine($"category: {category.name} \t count: {category.count} \t weight_sum: {category.weigths_sum} \t weight_avg: {category.weigths_avg}  \t relevance_sum: {category.relevance_sum} \t relevance_avg: {category.relevance_avg}");
+                if (category.subcategories.Length > 0)
+                {
+                    foreach (NLP.Models.Category subcategory in (NLP.Models.Category[])category.subcategories)
+                    {
+                        Console.WriteLine($"\t subcategory: {subcategory.name} \t count: {subcategory.count} \t weight_sum: {subcategory.weigths_sum} \t weight_avg: {subcategory.weigths_avg}  \t relevance_sum: {subcategory.relevance_sum} \t relevance_avg: {subcategory.relevance_avg}");
+                    }
+                }
+            }
+        }
 ```
 
 ### QnA
