@@ -46,7 +46,14 @@ CREATE TABLE `nlp_dataset_experiments` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 
-
+CREATE TABLE `nlp_dataset_categories` (
+  `category_id` int(11) NOT NULL AUTO_INCREMENT,
+  `experiment_id` int(11) DEFAULT NULL,
+  `parent_id` int(11) DEFAULT NULL,
+  `name` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`category_id`),
+  KEY `unique` (`experiment_id`,`parent_id`,`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 ```
 
 # Create Tables for QnA
