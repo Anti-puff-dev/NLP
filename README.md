@@ -10,8 +10,10 @@ MySQL.Data 8.0.28
 Newtonsoft.Json 13.0.1  
 
 # NLP version 1 Functions  
-Text Classification / Categorization  - Modes: Realtime Memory / Database (MySQL/MariaDB)  
-QnA - Answer the Questions  - Database (MySQL/MariaDB)  
+Text Classification / Categorization -  Database Only (MySQL/MariaDB) / Runtime deprecated  
+Soundex Mode are available now
+ 
+QnA - Answer the Questions  -  Database (MySQL/MariaDB)  
 
 Create in bin appsettings.json  
 ```
@@ -25,15 +27,26 @@ Create in bin appsettings.json
 ```
 CREATE TABLE `nlp_dataset` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `experiment` varchar(50) DEFAULT NULL,
+  `experiment_id` int(11) DEFAULT NULL,
   `word` varchar(50) NOT NULL,
-  `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `category_id` int(11) NOT NULL,
   `count` int(11) DEFAULT NULL,
   `weight` double(15,10) DEFAULT NULL,
   `relevance` double(15,10) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique` (`experiment`,`word`,`category`)
-) ENGINE=InnoDB AUTO_INCREMENT=655 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  UNIQUE KEY `unique` (`experiment_id`,`word`,`category_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
+CREATE TABLE `nlp_dataset_experiments` (
+  `experiment_id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`experiment_id`),
+  UNIQUE KEY `unique` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
+
 ```
 
 # Create Tables for QnA
@@ -71,10 +84,10 @@ static void RunClassify()
 
     System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
-  NLP.Classify.Experiment = "Test1";
-  NLP.Classify.TrainType = NLP.Train.Runtime;
-  NLP.Classify.DbConnection = configuration["DefaultConnectionString"];
-  NLP.Classify.ClearDb();
+   NLP.Classify.Experiment = "Test1";
+   NLP.Classify.DbConnection = configuration["DefaultConnectionString"];
+   NLP.Classify.ClearDb();
+   NLP.Classify.Instance(1, 4, true);  //wordpooling, maxlength, use soundex
 
   string[] list = new string[] {
       "Abaco Abobora Alopécia Tarturfo Mágico Malabarista Genótipo Abaco Abobora",
