@@ -50,7 +50,7 @@ namespace NLP
         public static string Experiment = "default";
         public static string ExperimentId = "";
         public static string DbTable = "nlp_dataset";
-        public static double TrainingRate = 10;
+        public static double TrainingRate = Math.E;
         public static double TrainingRateDecay = 1.1;
         public static string DbConnection
         {
@@ -289,6 +289,7 @@ namespace NLP
         #endregion Train
 
 
+
         #region Predict
         public static Models.Category[] Predict(string text, int subcategories_levels = 1, int results = 10)
         {
@@ -324,6 +325,9 @@ namespace NLP
                             cat.relevance_avg = (cat.relevance_avg + token.relevance) / 2;
                             cat.relevance_sum += token.relevance;
                             cat.count++;
+
+                            //Console.WriteLine($">>> weigths_sum: " + cat.weigths_sum + " cat.relevance_sum: " + cat.relevance_sum);
+                            //Console.WriteLine($">>> token.weight " + token.weight + " token.relevance: " + token.relevance);
                         }
                         else
                         {
@@ -335,7 +339,8 @@ namespace NLP
                     }
                 }
 
-                list_categories = list_categories.OrderByDescending(item => item.count).ThenByDescending(item => item.relevance_avg).Take(results).ToList();   
+                //list_categories = list_categories.OrderByDescending(item => item.count).ThenByDescending(item => item.relevance_avg).Take(results).ToList();   
+                list_categories = list_categories.OrderByDescending(item => item.relevance_avg/(1 + item.weigths_avg)).Take(results).ToList();
             }
 
 
@@ -373,6 +378,9 @@ namespace NLP
                             cat.relevance_avg = (cat.relevance_avg + token.relevance) / 2;
                             cat.relevance_sum += token.relevance;
                             cat.count++;
+
+                            //Console.WriteLine($">>> weigths_sum: " + cat.weigths_sum + " cat.relevance_sum: " + cat.relevance_sum);
+                            //Console.WriteLine($">>> token.weight " + token.weight + " token.relevance: " + token.relevance);
                         }
                         else
                         {
@@ -384,7 +392,8 @@ namespace NLP
                     }
                 }
 
-                list_categories = list_categories.OrderByDescending(item => item.count).ThenByDescending(item => item.relevance_avg).Take(results).ToList();
+                //list_categories = list_categories.OrderByDescending(item => item.count).ThenByDescending(item => item.relevance_avg).Take(results).ToList();
+                list_categories = list_categories.OrderByDescending(item => item.relevance_avg / (1 + item.weigths_avg)).Take(results).ToList();
             }
 
             return list_categories.ToArray();
