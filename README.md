@@ -10,7 +10,9 @@ MySQL.Data 8.0.28
 Newtonsoft.Json 13.0.1  
 
 # NLP version 1 Functions  
-Text Classification / Categorization  -  Database Only (MySQL/MariaDB) / Runtime deprecated
+Text Classification / Categorization -  Database Only (MySQL/MariaDB) / Runtime deprecated  
+Soundex Mode are available now
+ 
 QnA - Answer the Questions  -  Database (MySQL/MariaDB)  
 
 Create in bin appsettings.json  
