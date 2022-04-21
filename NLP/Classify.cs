@@ -289,7 +289,7 @@ namespace NLP
         #region Predict
         public static Models.Category[] Predict(string text, int results = 10)
         {
-            Models.Token[] tokens = Relevances(Weights(Tokenize.Instance().Apply(text)));
+            Models.Token[] tokens = Relevances(Weights(Tokenize.Instance(word_pooling, maxlength, soundex).Apply(text)));
             List<Models.Token[]> list = new List<Models.Token[]>();
             List<Models.Category> list_categories = new List<Models.Category>();
 
