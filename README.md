@@ -120,9 +120,9 @@ static void RunClassify()
 
 
 
-            //NLP.Classify.TrainCategory(list[0], "test1", true);
-            //NLP.Classify.TrainCategory(list[1], "test1", true);
-            //NLP.Classify.TrainCategory(list[2], "test1", true);
+            //NLP.Classify.TrainCategory(list[0], new string[]{"test1"}, true);
+            //NLP.Classify.TrainCategory(list[1], new string[]{"test1"}, true);
+            //NLP.Classify.TrainCategory(list[2], new string[]{"test1"}, true);
             //Console.ReadKey();
 
             NLP.Classify.TrainCategoryGroup(list, new string[] { "categoria1", "subcategoria1-1" }, true);
