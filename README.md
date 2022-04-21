@@ -85,7 +85,7 @@ static void RunClassify()
    NLP.Classify.Experiment = "Test1";
    NLP.Classify.DbConnection = configuration["DefaultConnectionString"];
    NLP.Classify.ClearDb();
-   NLP.Classify.Instance(1, 4, true);
+   NLP.Classify.Instance(1, 4, true);  //wordpooling, maxlength, use soundex
 
   string[] list = new string[] {
       "Abaco Abobora Alopécia Tarturfo Mágico Malabarista Genótipo Abaco Abobora",
