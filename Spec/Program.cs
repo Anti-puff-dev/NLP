@@ -28,7 +28,7 @@ namespace Spec
 
             NLP.Classify.Experiment = "Test1";
             NLP.Classify.DbConnection = configuration["DefaultConnectionString"];
-            //NLP.Classify.ClearDb();
+            NLP.Classify.ClearDb();
             NLP.Classify.Instance(1, 4, true);
 
             string[] list = new string[] {
@@ -59,16 +59,23 @@ namespace Spec
             //NLP.Classify.TrainCategory(list[2], "test1", true);
             //Console.ReadKey();
 
-            //NLP.Classify.TrainCategoryGroup(list, "test1", true);
-            //NLP.Classify.TrainCategoryGroup(list1, "test2", true);
+            NLP.Classify.TrainCategoryGroup(list, new string[] { "categoria1", "subcategoria1-1" }, true);
+            NLP.Classify.TrainCategoryGroup(list1, new string[] { "categoria2", "subcategoria2-1" }, true);
 
             Console.WriteLine("-------------------------------------------------------------------------");
 
 
-            NLP.Models.Category[] categories = NLP.Classify.Predict(tests[4], true);
+            NLP.Models.Category[] categories = NLP.Classify.Predict(tests[4], true, 2);
             foreach (NLP.Models.Category category in categories)
             {
                 Console.WriteLine($"category: {category.name} \t count: {category.count} \t weight_sum: {category.weigths_sum} \t weight_avg: {category.weigths_avg}  \t relevance_sum: {category.relevance_sum} \t relevance_avg: {category.relevance_avg}");
+                if (category.subcategories.Length > 0)
+                {
+                    foreach (NLP.Models.Category subcategory in (NLP.Models.Category[])category.subcategories)
+                    {
+                        Console.WriteLine($"\t subcategory: {subcategory.name} \t count: {subcategory.count} \t weight_sum: {subcategory.weigths_sum} \t weight_avg: {subcategory.weigths_avg}  \t relevance_sum: {subcategory.relevance_sum} \t relevance_avg: {subcategory.relevance_avg}");
+                    }
+                }
             }
         }
 

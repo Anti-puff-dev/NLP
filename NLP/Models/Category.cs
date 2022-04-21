@@ -13,5 +13,6 @@ namespace NLP.Models
         public double weigths_avg { get; set; }
         public double relevance_sum { get; set; }
         public double relevance_avg { get; set; }
+        public Category[] subcategories { get; set; }
     }
 }
