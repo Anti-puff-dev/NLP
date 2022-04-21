@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Content Include="bin\Debug\netcoreapp2.1\NLP.deps.json" />
+    <Content Include="bin\Release\netcoreapp2.1\NLP.deps.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,6 +16,8 @@
     <None Include="bin\Debug\netcoreapp2.1\NLP.pdb" />
     <None Include="bin\Debug\netcoreapp2.1\StringUtils.dll" />
     <None Include="bin\Debug\netcoreapp2.1\StringUtils.pdb" />
+    <None Include="bin\Release\netcoreapp2.1\NLP.dll" />
+    <None Include="bin\Release\netcoreapp2.1\NLP.pdb" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,7 +30,7 @@
       <HintPath>..\..\MySQL\MySQL\bin\Release\netcoreapp2.1\MySQL.dll</HintPath>
     </Reference>
     <Reference Include="StringUtils">
-      <HintPath>..\..\MySQL\MySQL\bin\Release\netcoreapp2.1\StringUtils.dll</HintPath>
+      <HintPath>..\..\StringUtils\StringUtils\bin\Release\netcoreapp2.1\StringUtils.dll</HintPath>
     </Reference>
   </ItemGroup>
 

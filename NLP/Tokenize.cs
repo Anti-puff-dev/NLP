@@ -1,42 +1,73 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using StringUtils;
 
 namespace NLP
 {
     public class Tokenize
     {
-        #region Text
-        public static Models.Token[] Apply(string text)
+        public static double word_pooling = 1d;
+        public static int maxlength = 0;
+        public static bool soundex = false;
+
+
+        public Tokenize()
         {
-            string[] list = text.Split(new char[] { ' ', '\t' });//.ToList().Distinct().ToArray();
+
+        }
+
+        public static Tokenize Instance()
+        {
+            return new Tokenize();
+        }
+
+        public static Tokenize Instance(double word_pooling, int maxlength, bool sondex = false)
+        {
+            Tokenize.word_pooling = word_pooling;
+            Tokenize.maxlength = maxlength;
+            Tokenize.soundex = sondex;
+            return new Tokenize();
+        }
+
+
+        #region Text
+        public Models.Token[] Apply(string text)
+        {
+            string[] list = text.Split(new char[] { ' ', '\t' });
             var result = list.GroupBy(k => k, StringComparer.InvariantCultureIgnoreCase);
 
             List<Models.Token> tokens = new List<Models.Token>();
             foreach (var value in result)
             {
-                tokens.Add(new Models.Token() { word = value.Key, count = value.Count() });
+                string key = word_pooling < 1 ? WordPooling(value.Key, word_pooling) : value.Key;
+                if(soundex)
+                {
+                    key = Soundex.Apply(key, maxlength);
+                }
+
+                if(maxlength > 0)
+                {
+                    if(key.Length > maxlength)
+                    {
+                        key = key.Substring(9, maxlength);
+                    }
+                }
+                tokens.Add(new Models.Token() { word = key, count = value.Count() });
             }
-
-            /*List<Models.Token> tokens = new List<Models.Token>();
-            foreach (string value in list)
-            {
-                tokens.Add(new Models.Token() { word = value, count = list.Count(t => t == value) });
-            }*/
-
 
             return tokens.Distinct().ToArray();
         }
 
 
-        public static Models.Token[] Apply(string text, string[] ignore)
+        public Models.Token[] Apply(string text, string[] ignore)
         {
             text = Sanitize.CustomApply(text, ignore);
             return Apply(text);
         }
 
 
-        public static Models.Token[] Apply(string text, bool ignore)
+        public Models.Token[] Apply(string text, bool ignore)
         {
             if (ignore)
             {
@@ -49,6 +80,7 @@ namespace NLP
             return Apply(text);
         }
         #endregion Text
+
 
 
 
@@ -98,7 +130,7 @@ namespace NLP
         }
 
 
-        public static int EmbedDistance(String s, String w1, String w2)
+        public static int EmbedDistance(string s, string w1, string w2)
         {
             if (w1.Equals(w2))
             {
@@ -126,7 +158,7 @@ namespace NLP
         }
 
 
-        public static int Distance(String s, String w1, String w2)
+        public static int Distance(string s, string w1, string w2)
         {
             if (w1.Equals(w2))
             {
@@ -174,6 +206,7 @@ namespace NLP
             }
             return min_dist;
         }
+
         #endregion Functions
     }
 }

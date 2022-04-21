@@ -6,6 +6,7 @@ namespace NLP.Models
 {
     public class Category
     {
+        public int category_id { get; set; }
         public string name { get; set; }
         public int count { get; set; }
         public double weigths_sum { get; set; }

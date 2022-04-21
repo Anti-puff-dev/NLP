@@ -8,7 +8,7 @@ namespace NLP.Models
     {
         public int id { get; set; }
         public string word { get; set; }
-        public string category { get; set; }
+        public int category_id { get; set; }
         public int count { get; set; }
         public double weight { get; set; }
         public double relevance { get; set; }

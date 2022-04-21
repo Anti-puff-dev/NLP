@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using MySQL;
+using StringUtils;
 
 namespace NLP
 {
@@ -42,26 +43,45 @@ namespace NLP
         }
     }
 
-    public enum Train
-    {
-        Database = 0,
-        Runtime = 1
-    }
-
 
 
     public class Classify
     {
         public static string Experiment = "default";
-        public static Train TrainType = Train.Database;
+        public static string ExperimentId = "";
         public static string DbTable = "nlp_dataset";
-        public static string DbConnection {
+        public static double TrainingRate = 10;
+        public static double TrainingRateDecay = 1.1;
+        public static string DbConnection
+        {
             get => MySQL.DbConnection.ConnString;
             set { MySQL.DbConnection.ConnString = value; }
         }
-        public static Models.Token[] RuntimeTokens = new Models.Token[0];
-        public static double TrainingRate = 10;
-        public static double TrainingRateDecay = 1.1;
+
+        public static double word_pooling = 1d;
+        public static int maxlength = 0;
+        public static bool soundex = false;
+
+
+
+        public Classify()
+        {
+            
+        }
+
+        public static Classify Instance()
+        {
+            return new Classify();
+        }
+
+        public static Classify Instance(double word_pooling, int maxlength, bool sondex = false)
+        {
+            Classify.word_pooling = word_pooling;
+            Classify.maxlength = maxlength;
+            Classify.soundex = sondex;
+            return new Classify();
+        }
+
 
 
         #region Train
@@ -69,23 +89,19 @@ namespace NLP
         public static void TrainCategory(string text, string word)
         {
             Models.Token[] category_tokens = null;
-            Models.Token[] tokensArr = Tokenize.Apply(text);
+            Models.Token[] tokensArr = Tokenize.Instance(word_pooling, maxlength, soundex).Apply(text);
             Models.Token[] tokens = Relevances(Weights(tokensArr));
+
+            int category_id = Convert.ToInt32(Data.Query($"SELECT category_id FROM {DbTable}_categories WHERE name=?name", new string[] { word }).Tables[0].Rows[0][0]);
 
             foreach (Models.Token token in tokens)
             {
-                token.category = word;
+                token.category_id = category_id;
             }
 
+            category_tokens = MySQL.Json.Select.Fill($"SELECT * FROM {DbTable} WHERE category_id=?category_id AND experiment_id=?experiment_id ORDER BY word ASC", new string[] { category_id.ToString(), ExperimentId }).Multiple<Models.Token>();
 
-           if (TrainType == Train.Database)
-            {
-                category_tokens = MySQL.Json.Select.Fill($"SELECT * FROM {DbTable} WHERE category=?word AND experiment=?experiment ORDER BY word ASC", new string[] { word, Experiment }).Multiple<Models.Token>();
-
-            } else if(TrainType == Train.Runtime)
-            {
-                category_tokens = RuntimeTokens.Where(c => c.category == word).OrderBy(i => i.word).ToArray();
-            }
+            
 
             bool isfirst = false;
 
@@ -94,9 +110,8 @@ namespace NLP
                 if(category_tokens.Count() > 0)
                 {
                     isfirst = false;
-                    //string[] words = category_tokens.Select(item => item.word).ToArray<string>();
-                    Models.Token[] intersect_tokens = Intersect(tokens, category_tokens);//tokens.Where(item => words.Contains(item.word)).ToArray<Models.Token>();
-                    Models.Token[] different_tokens = Diference(tokens, category_tokens);//tokens.Where(item => !words.Contains(item.word)).ToArray<Models.Token>();
+                    Models.Token[] intersect_tokens = Intersect(tokens, category_tokens);
+                    Models.Token[] different_tokens = Diference(tokens, category_tokens);
 
                     int maxCount = intersect_tokens.OrderByDescending(i => i.count).First().count;
 
@@ -114,37 +129,28 @@ namespace NLP
                         token.relevance /= (TrainingRateDecay);
                     }
 
+                
+                    string query = "";
+                    List<string> parms = new List<string>();
 
-                    if (TrainType == Train.Database)
+                    int c = 0;
+
+                    foreach (Models.Token token in tokens)
                     {
-                        string query = "";
-                        List<string> parms = new List<string>();
-
-                        int c = 0;
-
-                        //RuntimeTokens = RuntimeTokens.Concat(tokens).GroupBy(x => new { x.category, x.word }).Select(x => x.First()).ToArray();
-
-                        foreach (Models.Token token in RuntimeTokens)
-                        {
-                            query += $"INSERT INTO {DbTable} (experiment, word, category, {DbTable}.count, weight, relevance) VALUES (?experiment_i{c}, ?word_i{c}, ?category_i{c}, ?count_i{c}, ?weight_i{c}, ?relevance_i{c}) ON DUPLICATE KEY UPDATE {DbTable}.count=?count_u{c}, weight=?weight_u{c}, relevance=?relevance_u{c};";
-                            parms.Add(Experiment);
-                            parms.Add(token.word);
-                            parms.Add(word);
-                            parms.Add(token.count.ToString());
-                            parms.Add(token.weight.ToString().Replace(",", "."));
-                            parms.Add(token.relevance.ToString().Replace(",", "."));
-                            parms.Add(token.count.ToString());
-                            parms.Add(token.weight.ToString().Replace(",", "."));
-                            parms.Add(token.relevance.ToString().Replace(",", "."));
-                            c++;
-                        }
-
-                        Data.Query(query, parms.ToArray());
+                        query += $"INSERT INTO {DbTable} (experiment_id, word, category_id, {DbTable}.count, weight, relevance) VALUES (?experiment_i{c}, ?word_i{c}, ?category_i{c}, ?count_i{c}, ?weight_i{c}, ?relevance_i{c}) ON DUPLICATE KEY UPDATE {DbTable}.count=?count_u{c}, weight=?weight_u{c}, relevance=?relevance_u{c};";
+                        parms.Add(ExperimentId);
+                        parms.Add(token.word);
+                        parms.Add(category_id.ToString());
+                        parms.Add(token.count.ToString());
+                        parms.Add(token.weight.ToString().Replace(",", "."));
+                        parms.Add(token.relevance.ToString().Replace(",", "."));
+                        parms.Add(token.count.ToString());
+                        parms.Add(token.weight.ToString().Replace(",", "."));
+                        parms.Add(token.relevance.ToString().Replace(",", "."));
+                        c++;
                     }
-                    else if (TrainType == Train.Runtime)
-                    {
-                        RuntimeTokens = RuntimeTokens.Concat(tokens).GroupBy(x => new { x.category, x.word } ).Select(x => x.First()).ToArray();
-                    }
+
+                    Data.Query(query, parms.ToArray());
                 }
                 else
                 {
@@ -160,45 +166,36 @@ namespace NLP
 
             if (isfirst)
             {
-                if (TrainType == Train.Database)
-                {
-                    string query = "";
-                    List<string> parms = new List<string>();
+                string query = "";
+                List<string> parms = new List<string>();
 
-                    int c = 0;
-                    foreach (Models.Token token in tokens)
-                    {
-                        query += $"INSERT INTO {DbTable} (experiment, word, category, {DbTable}.count, weight, relevance) VALUES (?experiment_i{c}, ?word_i{c}, ?category_i{c}, ?count_i{c}, ?weight_i{c}, ?relevance_i{c}) ON DUPLICATE KEY UPDATE {DbTable}.count=?count_u{c}, weight=?weight_u{c}, relevance=?relevance_u{c};";
-                        parms.Add(Experiment);
-                        parms.Add(token.word);
-                        parms.Add(word);
-                        parms.Add(token.count.ToString());
-                        parms.Add(token.weight.ToString().Replace(",","."));
-                        parms.Add(token.relevance.ToString().Replace(",", "."));
-                        parms.Add(token.count.ToString());
-                        parms.Add(token.weight.ToString().Replace(",", "."));
-                        parms.Add(token.relevance.ToString().Replace(",", "."));
-                        c++;
-                    }
-
-                    Data.Query(query, parms.ToArray());
-                    RuntimeTokens = RuntimeTokens.Concat(tokens).ToArray();
-                }
-                else if (TrainType == Train.Runtime)
+                int c = 0;
+                foreach (Models.Token token in tokens)
                 {
-                    RuntimeTokens = RuntimeTokens.Concat(tokens).ToArray();
+                    query += $"INSERT INTO {DbTable} (experiment_id, word, category_id, {DbTable}.count, weight, relevance) VALUES (?experiment_i{c}, ?word_i{c}, ?category_i{c}, ?count_i{c}, ?weight_i{c}, ?relevance_i{c}) ON DUPLICATE KEY UPDATE {DbTable}.count=?count_u{c}, weight=?weight_u{c}, relevance=?relevance_u{c};";
+                    parms.Add(ExperimentId);
+                    parms.Add(token.word);
+                    parms.Add(category_id.ToString());
+                    parms.Add(token.count.ToString());
+                    parms.Add(token.weight.ToString().Replace(",","."));
+                    parms.Add(token.relevance.ToString().Replace(",", "."));
+                    parms.Add(token.count.ToString());
+                    parms.Add(token.weight.ToString().Replace(",", "."));
+                    parms.Add(token.relevance.ToString().Replace(",", "."));
+                    c++;
                 }
+
+                Data.Query(query, parms.ToArray());
             }
 
 
-
-            /*#region Debug
-            Console.WriteLine(">>> ");
+            #region Debug
+            /*Console.WriteLine(">>> ");
             foreach (Models.Token token in RuntimeTokens.OrderByDescending(o => o.weight))
             {     
                 Console.WriteLine($"word: {token.word} \t category: { token.category} \t count: {token.count} \t weight: {token.weight} \t relevance: {token.relevance}");
-            }
-            #endregion Debug*/
+            }*/
+            #endregion Debug
         }
 
 
@@ -224,15 +221,15 @@ namespace NLP
         }
 
 
-        public static void TrainCategoryGroup(string[] texts, string word, int epochs = 1)
+        public static void TrainCategoryGroup(string[] texts, string word, string parent = "", int epochs = 1)
         {
-            Console.WriteLine("Start Training...");
+            Console.WriteLine("Start Training Group...");
             TrainingRate = 1 + ((TrainingRate - 1) / epochs);
+
+            DbPopulateExperimentsCategories(word, parent);
 
             for (int j = 0; j < epochs; j++)
             {
-                //Console.WriteLine($"\nEphoc {(j + 1)}");
-
                 for (int i = 0; i < texts.Length; i++)
                 {
                     texts[i] = Sanitize.Apply(texts[i]);
@@ -242,15 +239,15 @@ namespace NLP
         }
 
 
-        public static void TrainCategoryGroup(string[] texts, string word, string[] ignore, int epochs = 1)
+        public static void TrainCategoryGroup(string[] texts, string word, string[] ignore, string parent = "", int epochs = 1)
         {
-            Console.WriteLine("Start Training...");
+            Console.WriteLine("Start Training Group...");
             TrainingRate = 1 + ((TrainingRate - 1) / epochs);
+
+            DbPopulateExperimentsCategories(word, parent);
 
             for (int j = 0; j < epochs; j++)
             {
-                //Console.WriteLine($"\nEphoc {(j + 1)}");
-
                 for (int i = 0; i < texts.Length; i++)
                 {
                     texts[i] = Sanitize.CustomApply(texts[i], ignore);
@@ -260,15 +257,16 @@ namespace NLP
         }
 
 
-        public static void TrainCategoryGroup(string[] texts, string word, bool ignore, int epochs = 1)
+        public static void TrainCategoryGroup(string[] texts, string word, bool ignore, string parent = "", int epochs = 1)
         {
-            Console.WriteLine("Start Training...");
+            Console.WriteLine("Start Training Group...");
             TrainingRate = 1 + ((TrainingRate - 1) / epochs );
+
+            DbPopulateExperimentsCategories(word, parent);
+
 
             for (int j = 0; j < epochs; j++)
             {
-                //Console.WriteLine($"\nEphoc {(j+1)}");
-
                 for (int i = 0; i < texts.Length; i++)
                 {
                     if (ignore)
@@ -283,6 +281,7 @@ namespace NLP
                 }
             }
         }
+
         #endregion Train.Category
         #endregion Train
 
@@ -290,30 +289,19 @@ namespace NLP
         #region Predict
         public static Models.Category[] Predict(string text, int results = 10)
         {
-            Models.Token[] tokens = Relevances(Weights(Tokenize.Apply(text)));
+            Models.Token[] tokens = Relevances(Weights(Tokenize.Instance().Apply(text)));
             List<Models.Token[]> list = new List<Models.Token[]>();
             List<Models.Category> list_categories = new List<Models.Category>();
 
             Models.Token[] _tokens = tokens.OrderByDescending(i => i.weight).ToArray();
+            if (String.IsNullOrEmpty(ExperimentId)) DbPopulateExperiments();
 
-            if (TrainType == Train.Database)
+            foreach (Models.Token token in _tokens)
             {
-                foreach (Models.Token token in _tokens)
-                {
-                    Models.Token[] word_tokens = MySQL.Json.Select.Fill($"SELECT * FROM {DbTable} WHERE experiment=?experiment AND word=?word ORDER BY weight DESC LIMIT 30", new string[] { Experiment, token.word }).Multiple<Models.Token>();
-                    //Console.WriteLine(word_tokens.Length); 
-                    if (word_tokens != null && word_tokens.Length > 0) list.Add(word_tokens);
-                }
+                Models.Token[] word_tokens = MySQL.Json.Select.Fill($"SELECT * FROM {DbTable} WHERE experiment_id=?experiment_id AND word=?word ORDER BY weight DESC LIMIT 30", new string[] { ExperimentId, token.word }).Multiple<Models.Token>();
+                if (word_tokens != null && word_tokens.Length > 0) list.Add(word_tokens);
             }
-            else if (TrainType == Train.Runtime)
-            {
-                foreach (Models.Token token in _tokens)
-                {
-                    Models.Token[] word_tokens = RuntimeTokens.Where(i => i.word == token.word).OrderByDescending(i => i.weight).Take(30).ToArray();
-                    //Console.WriteLine(word_tokens.Length);
-                    if (word_tokens != null && word_tokens.Length > 0) list.Add(word_tokens);
-                }
-            }
+           
 
             int c = 1;
             foreach (Models.Token[] token_list in list)
@@ -322,7 +310,7 @@ namespace NLP
 
                 foreach (Models.Token token in token_list)
                 {
-                    Models.Category cat = list_categories.Find(v => v.name == token.category);
+                    Models.Category cat = list_categories.Find(v => v.category_id == token.category_id);
                     if (cat != null)
                     {
                         cat.weigths_avg = (cat.weigths_avg + token.weight) / 2;
@@ -333,10 +321,11 @@ namespace NLP
                     }
                     else
                     {
-                        list_categories.Add(new Models.Category() { name = token.category, count = 1, weigths_sum = token.weight, weigths_avg = token.weight, relevance_sum = token.relevance, relevance_avg = token.relevance });
+                        string category_name = Data.Query($"SELECT name FROM {DbTable}_categories WHERE category_id=?category_id", new string[] { token.category_id.ToString() }).Tables[0].Rows[0][0].ToString();
+                        list_categories.Add(new Models.Category() { category_id = token.category_id, name = category_name, count = 1, weigths_sum = token.weight, weigths_avg = token.weight, relevance_sum = token.relevance, relevance_avg = token.relevance });
                     }
 
-                    Console.WriteLine($"category: {token.category} \tword: {token.word} \t count: {token.count} \t weight: {token.weight} \t relevance: {token.relevance} \n");
+                    Console.WriteLine($"category_id: {token.category_id} \tword: {token.word} \t count: {token.count} \t weight: {token.weight} \t relevance: {token.relevance} \n");
                 }
             }
 
@@ -500,7 +489,44 @@ namespace NLP
 
         public static void ClearDb()
         {
-            Data.Query($"DELETE FROM {DbTable} WHERE experiment=?experiment", new string[] { Experiment });
+            Data.Query($"TRUNCATE TABLE {DbTable};TRUNCATE TABLE {DbTable}_experiments;TRUNCATE TABLE {DbTable}_categories;");
+        }
+
+
+        public static void CleaExperiment()
+        {
+            if (String.IsNullOrEmpty(ExperimentId)) DbPopulateExperiments();
+            Data.Query($"DELETE FROM {DbTable} WHERE experiment_id=?experiment_id", new string[] { ExperimentId });
+            Data.Query($"DELETE FROM {DbTable}_experiments WHERE experiment_id=?experiment_id", new string[] { ExperimentId });
+            Data.Query($"DELETE FROM {DbTable}_categories WHERE experiment_id=?experiment_id", new string[] { ExperimentId });
+        }
+
+
+        private static void DbPopulateExperimentsCategories(string word, string parent)
+        {
+            if (String.IsNullOrEmpty(ExperimentId))
+            {
+                Data.Query($"INSERT IGNORE INTO {DbTable}_experiments (name) VALUES (?name)", new string[] { Experiment });
+                ExperimentId = Data.Query($"SELECT experiment_id FROM {DbTable}_experiments WHERE name=?name", new string[] { Experiment }).Tables[0].Rows[0][0].ToString();
+            }
+
+            if (!String.IsNullOrEmpty(parent))
+            {
+                Data.Query($"INSERT IGNORE INTO {DbTable}_categories (experiment_id, parent_id, name) VALUES (experiment_id, 0, ?name)", new string[] { ExperimentId, parent });
+            }
+
+            Data.Query($"INSERT IGNORE INTO {DbTable}_categories (experiment_id, parent_id, name) VALUES (?experiment_id, (SELECT experiment_id FROM {DbTable}_experiments WHERE name=?parent), ?name)", new string[] { ExperimentId, parent, word });
+
+        }
+
+
+        private static void DbPopulateExperiments()
+        {
+            if (String.IsNullOrEmpty(ExperimentId))
+            {
+                Data.Query($"INSERT IGNORE INTO {DbTable}_experiments (name) VALUES (?name)", new string[] { Experiment });
+                ExperimentId = Data.Query($"SELECT experiment_id FROM {DbTable}_experiments WHERE name=?name", new string[] { Experiment }).Tables[0].Rows[0][0].ToString();
+            }
         }
         #endregion Functions
     }
