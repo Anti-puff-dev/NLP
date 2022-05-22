@@ -50,7 +50,7 @@ namespace NLP
                 {
                     if(key.Length > maxlength)
                     {
-                        key = key.Substring(9, maxlength);
+                        key = key.Substring(0, maxlength);
                     }
                 }
                 tokens.Add(new Models.Token() { word = key, count = value.Count() });

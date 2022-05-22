@@ -34,13 +34,13 @@ namespace Spec
             string[] list = new string[] {
                 "Abaco Abobora Alopécia Tarturfo Mágico Malabarista Genótipo Abaco Abobora",
                 "Abobora Coiso Tesoura Mágico Metro Beneficio Metro Abobora Janela Estrelar",
-                "Casa Metro Abobora Dinamite Determinante Alecrim Metrica",
+                "Casa Metro Abobora Dinamite Determinante Alecrim Metrica"
             };
 
             string[] list1 = new string[] {
                 "Abaco Amora Bronco Setembro Janela Betoneira Joelho Maça Bronco",
                 "Amarelo Jardineira Bronco Cabeça Peça Ovo Orelha Telhado Fone",
-                "Ardosia Branco Azul Gorjeta Amora Gelado Quente Amora Janela",
+                "Ardosia Branco Azul Gorjeta Amora Gelado Quente Amora Janela"
             };
 
 
@@ -65,7 +65,7 @@ namespace Spec
             Console.WriteLine("-------------------------------------------------------------------------");
 
 
-            NLP.Models.Category[] categories = NLP.Classify.Predict(tests[4], true, 2);
+            NLP.Models.Category[] categories = NLP.Classify.Predict(tests[3], true, 2);
             foreach (NLP.Models.Category category in categories)
             {
                 Console.WriteLine($"category: {category.name} \t count: {category.count} \t weight_sum: {category.weigths_sum} \t weight_avg: {category.weigths_avg}  \t relevance_sum: {category.relevance_sum} \t relevance_avg: {category.relevance_avg}");
